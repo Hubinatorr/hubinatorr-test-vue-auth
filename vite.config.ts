@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite'
-import reactRefresh from '@vitejs/plugin-react-refresh'
+import vue from '@vitejs/plugin-vue';
 import replace from '@rollup/plugin-replace';
 
 import pkg from './package.json';
@@ -7,7 +7,7 @@ import pkg from './package.json';
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [
-    	reactRefresh(),
+		vue(),
 	    replace({ __VERSION__: `'${pkg.version}'` }),
     ],
 	build: {
@@ -18,9 +18,6 @@ export default defineConfig({
 			fileName: 'index',
 			name: 'auth0n',
 			formats: ['es', 'cjs'],
-		},
-		rollupOptions: {
-			external: Object.keys(pkg.peerDependencies),
 		},
 	},
 })

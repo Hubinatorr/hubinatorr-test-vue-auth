@@ -3,20 +3,20 @@ import fs from 'fs-extra';
 
 const workDir = './src/';
 const spaDir = 'auth0-spa-js';
-const reactDir = 'auth0-react';
+const vueDir = 'auth0-vue';
 
 const sourceDirSpa = `./node_modules/@auth0/${spaDir}/src`;
-const sourceDirReact = `./node_modules/@auth0/${reactDir}/src`;
+const sourceDirReact = `./node_modules/@auth0/${vueDir}/src`;
 
 await fs.emptyDir(workDir + spaDir);
-await fs.emptyDir(workDir + reactDir);
+await fs.emptyDir(workDir + vueDir);
 
 await fs.copy(sourceDirSpa, workDir + spaDir);
-await fs.copy(sourceDirReact, workDir + reactDir);
+await fs.copy(sourceDirReact, workDir + vueDir);
 
 const project = new Project();
 project.addSourceFilesAtPaths(`${workDir}/${spaDir}/**/*.ts`);
-project.addSourceFilesAtPaths(`${workDir}/${reactDir}/**/*.tsx`);
+project.addSourceFilesAtPaths(`${workDir}/${vueDir}/**/*.ts`);
 
 // --
 // edit Auth0Client.ts
@@ -35,9 +35,6 @@ const templateHeadUrl = clientClass.getMethod('_authorizeUrl').getFirstDescendan
 templateHeadUrl.replaceWithText(templateHeadUrl.getText().replace('/authorize', '/oauth2/authorize'));
 
 // change buildLogoutUrl to remove /v2 from url
-const templateHeadBuildLogoutUrl = clientClass.getMethod('buildLogoutUrl').getFirstDescendantByKind(15);
-templateHeadBuildLogoutUrl.replaceWithText(templateHeadBuildLogoutUrl.getText().replace('/v2/', '/'));
-
 // Get last IF statement from constructor and remove it
 clientClass.getConstructors()[0]
 	.getBody()
@@ -45,21 +42,6 @@ clientClass.getConstructors()[0]
 	.getLastChildByKind(SyntaxKind.IfStatement)
 	.remove();
 
-// remove unused methods to lower footprint
-/*clientClass.getMethod('loginWithRedirect').remove();
-clientClass.getMethod('buildAuthorizeUrl').remove();
-clientClass.getMethod('loginWithPopup').remove();
-clientClass.getMethod('getTokenWithPopup').remove();*/
-// clientClass.getMethod('logout').remove();
-
-// this one is used in an IF, but not needed, replace it's content with "return"
-/*clientClass.getMethod('_getTokenUsingRefreshToken').setBodyText((writer) => {
-	writer.write('return;');
-});*/
-
-// ############
-// edit api.js
-// ############
 
 const returnStatement = project.getSourceFile('api.ts').getFunction('oauthToken').getFirstDescendantByKind(SyntaxKind.ReturnStatement);
 
@@ -75,39 +57,17 @@ returnStatement.getDescendantsOfKind(SyntaxKind.PropertyAssignment).forEach((d) 
 // edit auth0-provider.tsx
 // ########################
 
-project.getSourceFile('auth0-provider.tsx').insertText(0, '// @ts-nocheck\n');
-
-/*
-const authProvider = project.getSourceFile('auth0-provider.tsx').getVariableDeclaration('Auth0Provider');
-
-const varsToRemove = ['loginWithPopup', 'getAccessTokenWithPopup', 'buildAuthorizeUrl'];
-const nodesToRemove = [];
-
-authProvider.getDescendantsOfKind(SyntaxKind.VariableDeclaration).forEach((d) => {
-	if (varsToRemove.includes(d.getFirstDescendantByKind(SyntaxKind.Identifier).getText())) {
-		nodesToRemove.push(d);
-	}
-});
-
-const returnBody = authProvider.getDescendantsOfKind(SyntaxKind.ReturnStatement).reverse().find(() => true);
-
-returnBody
-	.getFirstDescendantByKind(SyntaxKind.JsxElement)
-	.getDescendantsOfKind(SyntaxKind.ShorthandPropertyAssignment)
-	.forEach((d) => {
-		if (varsToRemove.includes(d.getName())) {
-			d.remove();
-		}
-	}
-);
-
-nodesToRemove.forEach((d) => d.remove());
-*/
+// project.getSourceFile('auth0-provider.tsx').insertText(0, '// @ts-nocheck\n');
 
 
-// edit all imports to point to our sources
 project.getSourceFiles().forEach((sf) => {
 	sf.getImportDeclarations().forEach((id) => {
+		if (id.getModuleSpecifierValue() === '@auth0/auth0-spa-js') {
+			id.setModuleSpecifier(`../${spaDir}`);
+		}
+	});
+
+	sf.getExportDeclarations().forEach((id) => {
 		if (id.getModuleSpecifierValue() === '@auth0/auth0-spa-js') {
 			id.setModuleSpecifier(`../${spaDir}`);
 		}
