@@ -1,0 +1,18 @@
+default:
+  tags:
+    - experimental
+
+stages:
+  - publish
+
+Publish package:
+  stage: publish
+  only:
+    - tags
+  variables:
+    GIT_STRATEGY: clone
+  script:
+    - npm install
+    - npm run build
+    - echo "//gitlab.nalgoo.com/api/v4/projects/${CI_PROJECT_ID}/packages/npm/:_authToken=${CI_JOB_TOKEN}" > .npmrc
+    - npm publish
