@@ -5,7 +5,6 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "serve": "vite preview",
-    "prebuild": "node src/prepare-source.mjs",
     "release": "git fetch && cross-env NODE_ENV=test np --no-publish --no-yarn --yolo"
   },
   "source": "./src/main.ts",

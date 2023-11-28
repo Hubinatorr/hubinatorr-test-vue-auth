@@ -3,7 +3,5 @@ node_modules
 .idea
 *.local
 
-/src/auth0-react/
-/src/auth0-spa-js/
 /lib/
 /dist/
